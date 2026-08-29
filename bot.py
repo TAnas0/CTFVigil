@@ -1,100 +1,99 @@
 import os
-import time
-from datetime import datetime, timezone
+import re
 from dotenv import load_dotenv
-import aiohttp
 import discord
 from discord.ext import commands
 
-# Define required permissions (intents)
+from ctfvigil.client import CTFTimeClient
+from ctfvigil.utils import create_event_embed
+
+load_dotenv()
+
+
+class CLIFlags(commands.FlagConverter, prefix="--", delimiter=":", case_insensitive=True):
+    """CLI-style flag parser for CTF feed commands."""
+
+    limit: int = commands.flag(default=5, description="Number of events to display")
+    online: bool = commands.flag(default=False, description="Filter for online-only events")
+
+    @classmethod
+    async def convert(cls, ctx: commands.Context, argument: str) -> "CLIFlags":
+        arg = argument.strip()
+        if arg.isdigit():
+            arg = f"--limit:{arg}"
+        else:
+            arg = re.sub(r"--([a-zA-Z0-9_-]+)=", r"--\1:", arg)
+            arg = re.sub(r"--([a-zA-Z0-9_-]+)\s+([^\s-]+)", r"--\1:\2", arg)
+            arg = re.sub(r"--online(?!\S)(?!\s*:)", "--online:true", arg, flags=re.IGNORECASE)
+        return await super().convert(ctx, arg)
+
+
 intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+ctf_client = CTFTimeClient()
+
 
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user.name}")
 
+
 @bot.command()
-async def hello(ctx):
+async def hello(ctx: commands.Context):
     await ctx.send(f"Hello, {ctx.author.name}!")
 
-def format_time_remaining(start_iso):
-    # Parse the ISO start string into a timezone-aware datetime object
-    start_dt = datetime.fromisoformat(start_iso.replace("Z", "+00:00"))
-    now_dt = datetime.now(timezone.utc)
-    
-    diff = start_dt - now_dt
-    total_seconds = int(diff.total_seconds())
-    
-    if total_seconds <= 0:
-        return "Started or in progress!"
-        
-    days = total_seconds // 86400
-    hours = (total_seconds % 86400) // 3600
-    minutes = (total_seconds % 3600) // 60
-    
-    parts = []
-    if days > 0:
-        parts.append(f"{days}d")
-    if hours > 0 or days > 0:
-        parts.append(f"{hours}h")
-    parts.append(f"{minutes}m")
-    
-    return f"in {' '.join(parts)}"
 
-@bot.command()
-async def upcomingctfs(ctx):
-    now = int(time.time())
-    url = f"https://ctftime.org/api/v1/events/?limit=3&start={now}"
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-    
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers=headers) as response:
-            if response.status != 200:
-                await ctx.send("Failed to reach the CTFtime API.")
-                return
-            
-            events = await response.json()
-            if not events:
-                await ctx.send("No upcoming CTFs found.")
-                return
-            
-            for event in events[:3]:
-                name = event.get("title")
-                ctftime_link = event.get("ctftime_url")
-                event_url = event.get("url") or ctftime_link
-                format_type = event.get("format", "Unknown")
-                
-                start_iso = event.get("start")
-                friendly_countdown = format_time_remaining(start_iso)
-                
-                orgs = event.get("organizers", [])
-                org_name = orgs[0].get("name") if orgs else "Unknown"
-                
-                desc = event.get("description", "No description provided.")
-                if len(desc) > 250:
-                    desc = desc[:247] + "..."
-                    
-                logo = event.get("logo")
-                
-                embed = discord.Embed(
-                    title=name,
-                    url=event_url,
-                    description=desc,
-                    color=discord.Color.dark_purple()
-                )
-                
-                if logo:
-                    embed.set_thumbnail(url=logo)
-                    
-                embed.add_field(name="⏰ Starts", value=friendly_countdown, inline=True)
-                embed.add_field(name="🏛️ Organizer", value=org_name, inline=True)
-                embed.add_field(name="🏆 Format", value=format_type, inline=True)
-                embed.add_field(name="🔗 CTFtime", value=f"[Page]({ctftime_link})", inline=True)
-                
-                await ctx.send(embed=embed)
+async def send_ctf_feed(ctx: commands.Context, limit: int, online: bool):
+    """Fetch and send CTF events as individual messages for reaction-based tracking."""
+    if limit < 1:
+        await ctx.send("Please specify a limit of at least 1.")
+        return
 
-load_dotenv()
-bot.run(os.getenv("DISCORD_TOKEN"))
+    limit = min(limit, 20)
+    fetch_limit = limit * 2 if online else limit
+
+    try:
+        events = await ctf_client.fetch_upcoming_events(limit=fetch_limit)
+    except Exception as exc:
+        await ctx.send(f"❌ Error fetching CTF events: `{exc}`")
+        return
+
+    if online:
+        events = [e for e in events if not e.get("onsite", False)]
+
+    events = events[:limit]
+
+    if not events:
+        await ctx.send("No upcoming CTFs found matching your criteria.")
+        return
+
+    for event in events:
+        await ctx.send(embed=create_event_embed(event))
+
+
+@bot.command(name="ctfs", aliases=["upcomingctfs", "ctf"])
+async def ctfs_cmd(ctx: commands.Context, *, flags: CLIFlags = CLIFlags()):
+    """CLI-like CTF feed. Supports: !ctfs --limit 5 --online"""
+    await send_ctf_feed(ctx, limit=flags.limit, online=flags.online)
+
+
+@bot.command(name="upcoming")
+async def upcoming_cmd(ctx: commands.Context, limit: int = 5):
+    """Unfiltered upcoming CTF feed."""
+    await send_ctf_feed(ctx, limit=limit, online=False)
+
+
+@bot.command(name="onlinectfs", aliases=["upcoming_online"])
+async def onlinectfs_cmd(ctx: commands.Context, limit: int = 5):
+    """Online-only CTF feed."""
+    await send_ctf_feed(ctx, limit=limit, online=True)
+
+
+if __name__ == "__main__":
+    token = os.getenv("DISCORD_TOKEN")
+    if token:
+        bot.run(token)
+    else:
+        print("DISCORD_TOKEN is not set in environment or .env file.")
