@@ -5,6 +5,7 @@ import discord
 from discord.ext import commands
 
 from ctfvigil.client import CTFTimeClient
+from ctfvigil.clients.ctfd import CTFdClient
 from ctfvigil.utils import create_event_embed
 
 from tasks.tasks import sync_ctftime_events_task, check_ctfd_ctf
@@ -92,6 +93,72 @@ async def upcoming_cmd(ctx: commands.Context, limit: int = 5):
 async def onlinectfs_cmd(ctx: commands.Context, limit: int = 5):
     """Online-only CTF feed."""
     await send_ctf_feed(ctx, limit=limit, online=True)
+
+
+@bot.command(name="track", aliases=["inspect", "probe"])
+async def track_cmd(ctx: commands.Context, url: str):
+    """Inspect and probe a remote CTFd platform instance without credentials."""
+    cleaned_url = url.strip()
+    if not cleaned_url.startswith(("http://", "https://")):
+        cleaned_url = f"https://{cleaned_url}"
+
+    # Initial outspoken status message
+    status_msg = await ctx.send(f"🔍 **Fingerprinting target CTFd platform at** `<{cleaned_url}>`...")
+
+    # Run blocking CTFd probes in executor
+    loop = bot.loop
+    client = CTFdClient(cleaned_url)
+
+    is_ctfd = await loop.run_in_executor(None, client.is_ctfd_instance)
+    if not is_ctfd:
+        embed = discord.Embed(
+            title="❌ Target Probing Failed",
+            description=f"Could not verify a valid CTFd API structure at `<{cleaned_url}>`.\n"
+                        "Make sure the URL points to a live CTFd instance.",
+            color=discord.Color.red(),
+        )
+        await status_msg.edit(content=None, embed=embed)
+        return
+
+    # Fetch event title and probe endpoint status in background executor
+    ctf_title = await loop.run_in_executor(None, client.get_ctf_title)
+    probe_results = await loop.run_in_executor(None, client.probe_all_endpoints)
+
+    # Build rich outspoken embed
+    embed = discord.Embed(
+        title=f"🎯 CTFd Instance Snapshot: {ctf_title}",
+        url=client.base_url,
+        description=f"**Target URL:** `{client.base_url}`\n**Fingerprint:** ✅ `CTFd API detected`",
+        color=discord.Color.blue(),
+    )
+
+    endpoint_labels = {
+        "users": ("👥 Users", "Registered players"),
+        "teams": ("🛡️ Teams", "Competing teams"),
+        "challenges": ("🧩 Challenges", "Active challenges"),
+        "scoreboard": ("🏆 Scoreboard", "Live standings"),
+    }
+
+    for ep_key, (label, desc) in endpoint_labels.items():
+        res = probe_results.get(ep_key, {})
+        status_code = res.get("status_code", 0)
+
+        if res.get("accessible"):
+            count = res.get("count")
+            count_str = f"({count} {desc.lower()})" if count is not None else ""
+            val_text = f"✅ `200 OK` {count_str}"
+        elif status_code in (401, 403):
+            val_text = f"⚠️ `HTTP {status_code}` (Protected by admins)"
+        elif status_code == 404:
+            val_text = f"❌ `404 Not Found` (Disabled)"
+        else:
+            reason = res.get("reason", "Unavailable")
+            val_text = f"❌ `{reason}`"
+
+        embed.add_field(name=label, value=val_text, inline=True)
+
+    embed.set_footer(text="Anonymous probe • No authentication tokens required")
+    await status_msg.edit(content=None, embed=embed)
 
 
 ## Reaction to messages
