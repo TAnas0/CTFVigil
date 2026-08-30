@@ -1,4 +1,4 @@
-from celery_app import celery_app
+from tasks.celery_app import celery_app
 
 @celery_app.task(bind=True, max_retries=3)
 def sync_ctftime_events_task(self):

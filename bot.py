@@ -7,6 +7,8 @@ from discord.ext import commands
 from ctfvigil.client import CTFTimeClient
 from ctfvigil.utils import create_event_embed
 
+from tasks.tasks import sync_ctftime_events_task, check_ctfd_ctf
+
 load_dotenv()
 
 
@@ -141,6 +143,8 @@ async def on_raw_reaction_add(payload):
             
             print(f"Associated CTF Title: {event_title}")
             # TODO create a discord event, make sure not duplicated
+            check_ctfd_ctf.delay("https://demo.ctfd.io/")
+            print("🔄 Background sync task dispatched to Celery worker!")
 
 # Main
 

@@ -43,8 +43,9 @@ RUN pip install --no-cache-dir --user /tmp/wheels/*.whl && \
     rm -rf /tmp/wheels
 
 # Copy application files
-COPY --chown=appuser:appuser bot.py ctfd.py tasks.py celery_app.py ./
+COPY --chown=appuser:appuser bot.py ./
 COPY --chown=appuser:appuser ctfvigil ./ctfvigil
+COPY --chown=appuser:appuser tasks ./tasks
 
 # TODO Lack of Container Healthchecks
 

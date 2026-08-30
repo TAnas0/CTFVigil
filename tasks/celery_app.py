@@ -9,7 +9,7 @@ celery_app = Celery(
     "ctfvigil_worker",
     broker=REDIS_URL,
     backend=REDIS_URL,
-    include=["tasks"]  # Explicitly tell Celery to load tasks.py
+    include=["tasks.tasks"]  # Explicitly tell Celery to load tasks/tasks.py
 )
 
 # Optional configuration settings
