@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ctfvigil"
+version = "0.1.0"
+description = "A Discord bot for avid Cybersecurity CTF players."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "aiohappyeyeballs>=2.7.1",
+    "aiohttp>=3.14.3",
+    "aiosignal>=1.4.0",
+    "amqp>=5.3.1",
+    "attrs>=26.1.0",
+    "billiard>=4.2.4",
+    "celery>=5.6.3",
+    "certifi>=2026.7.22",
+    "charset-normalizer>=3.5.1",
+    "click>=8.5.0",
+    "click-didyoumean>=0.3.1",
+    "click-plugins>=1.1.1.2",
+    "click-repl>=0.3.0",
+    "discord.py>=2.7.1",
+    "dotenv>=0.9.9",
+    "frozenlist>=1.8.0",
+    "idna>=3.19",
+    "kombu>=5.6.2",
+    "multidict>=6.7.1",
+    "packaging>=26.3",
+    "prompt-toolkit>=3.0.53",
+    "propcache>=0.5.2",
+    "python-dateutil>=2.9.0.post0",
+    "python-dotenv>=1.2.3",
+    "redis>=6.4.0",
+    "requests>=2.34.2",
+    "six>=1.17.0",
+    "soupsieve>=2.9.2",
+    "typing-extensions>=4.16.0",
+    "tzdata>=2026.3",
+    "tzlocal>=5.4.4",
+    "urllib3>=2.7.0",
+    "vine>=5.1.0",
+    "wcwidth>=0.8.3",
+    "yarl>=1.24.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "iniconfig>=2.3.0",
+    "pluggy>=1.6.0",
+    "pygments>=2.21.0",
+    "pytest>=9.1.1",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
