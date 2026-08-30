@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ctfvigil"
-version = "0.1.0"
+dynamic = ["version"]
 description = "A Discord bot for avid Cybersecurity CTF players."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -53,6 +53,9 @@ dev = [
     "pygments>=2.21.0",
     "pytest>=9.1.1",
 ]
+
+[tool.setuptools.dynamic]
+version = {attr = "ctfvigil.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["."]
