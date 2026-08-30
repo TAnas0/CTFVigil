@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### 🚀 Added (`feat`)
+- **CTFd Probing Command (`!track`)**: Added `!track <url>` (`!inspect`, `!probe`) command in `bot.py` to anonymously fingerprint CTFd target platforms and report HTTP accessibility across `/users`, `/teams`, `/challenges`, and `/scoreboard` endpoints.
+- **Docker Compose Watch**: Added `develop.watch` hot-reloading rules to `docker-compose.yml` (`sync+restart` for application code and `rebuild` for `pyproject.toml`).
+
+---
+
 ## [0.2.0] - 2026-08-30
 
 ### 🚀 Added (`feat`)

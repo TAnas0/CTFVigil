@@ -25,6 +25,19 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - DISCORD_TOKEN=${DISCORD_TOKEN}
     restart: unless-stopped
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./bot.py
+          target: /app/bot.py
+        - action: sync+restart
+          path: ./ctfvigil
+          target: /app/ctfvigil
+        - action: sync+restart
+          path: ./tasks
+          target: /app/tasks
+        - action: rebuild
+          path: ./pyproject.toml
 
   worker:
     build: .
@@ -36,6 +49,16 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/0
     restart: unless-stopped
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./ctfvigil
+          target: /app/ctfvigil
+        - action: sync+restart
+          path: ./tasks
+          target: /app/tasks
+        - action: rebuild
+          path: ./pyproject.toml
 
   beat:
     build: .
@@ -47,6 +70,13 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/0
     restart: unless-stopped
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./tasks
+          target: /app/tasks
+        - action: rebuild
+          path: ./pyproject.toml
 
 volumes:
   redis_data:
