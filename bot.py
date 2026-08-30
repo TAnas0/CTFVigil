@@ -161,6 +161,73 @@ async def track_cmd(ctx: commands.Context, url: str):
     await status_msg.edit(content=None, embed=embed)
 
 
+@bot.command(name="scoreboard", aliases=["standings", "lb", "leaderboard"])
+async def scoreboard_cmd(ctx: commands.Context, url: str):
+    """Fetch and display the live public scoreboard standings from a target CTFd instance."""
+    cleaned_url = url.strip()
+    if not cleaned_url.startswith(("http://", "https://")):
+        cleaned_url = f"https://{cleaned_url}"
+
+    status_msg = await ctx.send(f"🏆 **Fetching live scoreboard from** `<{cleaned_url}>`...")
+
+    loop = bot.loop
+    client = CTFdClient(cleaned_url)
+
+    is_ctfd = await loop.run_in_executor(None, client.is_ctfd_instance)
+    if not is_ctfd:
+        embed = discord.Embed(
+            title="❌ Scoreboard Fetch Failed",
+            description=f"Could not verify a valid CTFd API structure at `<{cleaned_url}>`.",
+            color=discord.Color.red(),
+        )
+        await status_msg.edit(content=None, embed=embed)
+        return
+
+    ctf_title = await loop.run_in_executor(None, client.get_ctf_title)
+    scoreboard_data = await loop.run_in_executor(None, lambda: client.get_ctfd_scoreboard_details(limit=10))
+
+    if not scoreboard_data.get("accessible"):
+        status_code = scoreboard_data.get("status_code", 0)
+        reason = scoreboard_data.get("reason", "Protected")
+        embed = discord.Embed(
+            title=f"⚠️ Scoreboard Protected: {ctf_title}",
+            description=f"The scoreboard endpoint is locked or hidden by administrators.\n"
+                        f"**Status:** `HTTP {status_code}` ({reason})",
+            color=discord.Color.gold(),
+        )
+        await status_msg.edit(content=None, embed=embed)
+        return
+
+    standings = scoreboard_data.get("standings", [])
+    if not standings:
+        embed = discord.Embed(
+            title=f"🏆 Live Scoreboard: {ctf_title}",
+            description="The scoreboard is currently empty or no points have been scored yet.",
+            color=discord.Color.blue(),
+        )
+        await status_msg.edit(content=None, embed=embed)
+        return
+
+    # Format standings list
+    medal_emojis = {1: "🥇", 2: "🥈", 3: "🥉"}
+    lines = []
+    for entry in standings:
+        pos = entry["pos"]
+        name = entry["name"]
+        score = entry["score"]
+        badge = medal_emojis.get(pos, f"`#{pos:02d}`")
+        lines.append(f"{badge} **{name}** — `{score} pts`")
+
+    embed = discord.Embed(
+        title=f"🏆 Live Leaderboard: {ctf_title}",
+        url=f"{client.base_url}/scoreboard",
+        description="\n".join(lines),
+        color=discord.Color.gold(),
+    )
+    embed.set_footer(text="Public CTFd Standings • Top 10 Teams")
+    await status_msg.edit(content=None, embed=embed)
+
+
 ## Reaction to messages
 
 async def get_bot_message(payload: discord.RawReactionActionEvent) -> discord.Message | None:

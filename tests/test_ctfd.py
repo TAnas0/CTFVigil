@@ -67,3 +67,33 @@ class TestCTFdClientProbing:
         client = CTFdClient("https://demo.ctfd.io")
         with patch.object(client.session, "get", side_effect=requests.RequestException()):
             assert client.get_ctf_title() == "demo.ctfd.io"
+
+    def test_get_ctfd_scoreboard_details_accessible(self):
+        client = CTFdClient("https://demo.ctfd.io")
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "success": True,
+            "data": [
+                {"account_name": "Team Alpha", "score": 1500, "pos": 1},
+                {"name": "Team Beta", "score": 1200, "pos": 2},
+            ],
+        }
+
+        with patch.object(client.session, "get", return_value=mock_response):
+            details = client.get_ctfd_scoreboard_details(limit=5)
+            assert details["accessible"] is True
+            assert len(details["standings"]) == 2
+            assert details["standings"][0]["name"] == "Team Alpha"
+            assert details["standings"][0]["score"] == 1500
+
+    def test_get_ctfd_scoreboard_details_protected(self):
+        client = CTFdClient("https://demo.ctfd.io")
+        mock_response = MagicMock()
+        mock_response.status_code = 403
+
+        with patch.object(client.session, "get", return_value=mock_response):
+            details = client.get_ctfd_scoreboard_details(limit=5)
+            assert details["accessible"] is False
+            assert details["status_code"] == 403
+            assert details["standings"] == []

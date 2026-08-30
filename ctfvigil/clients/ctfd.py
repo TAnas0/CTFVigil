@@ -129,3 +129,34 @@ class CTFdClient:
 
     def get_ctfd_scoreboard(self) -> list:
         return self.probe_endpoint("scoreboard").get("data", [])
+
+    def get_ctfd_scoreboard_details(self, limit: int = 10) -> dict:
+        """Fetches live scoreboard standings with rank, team/user name, and score details."""
+        probe = self.probe_endpoint("scoreboard")
+        if not probe.get("accessible"):
+            return {
+                "accessible": False,
+                "status_code": probe.get("status_code", 0),
+                "reason": probe.get("reason", "Forbidden or Unavailable"),
+                "standings": []
+            }
+
+        raw_data = probe.get("data", [])
+        standings = []
+        for idx, entry in enumerate(raw_data[:limit], start=1):
+            if isinstance(entry, dict):
+                name = entry.get("name") or entry.get("account_name") or f"Entry #{idx}"
+                score = entry.get("score", 0)
+                pos = entry.get("pos") or idx
+                standings.append({
+                    "pos": pos,
+                    "name": name,
+                    "score": score
+                })
+
+        return {
+            "accessible": True,
+            "status_code": 200,
+            "reason": "OK",
+            "standings": standings
+        }

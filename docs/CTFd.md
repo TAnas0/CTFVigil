@@ -30,8 +30,9 @@ Administrators of the CTF will grant the bot an administrative access token.
 ## Phase-by-Phase Implementation Plan
 
 * **Phase 1: Core API Wrapper Development**
-  * Build a lightweight Python client targeting CTFd's standard `v1` REST architecture.
-  * Implement liveness checks (`is_ctfd_instance`) via public endpoints like `/api/v1/users` or `/api/v1/challenges` or for newer versions `/healthcheck`.
+  * Build a lightweight Python client targeting CTFd's standard `v1` REST architecture (`ctfvigil/clients/ctfd.py`).
+  * Implement liveness checks (`is_ctfd_instance`) and endpoint diagnostic probing (`probe_endpoint`, `probe_all_endpoints`, `get_ctfd_scoreboard_details`).
+  * Expose anonymous inspection commands via Discord (`!track <url>` for instance diagnostics, `!scoreboard <url>` for live leaderboard standings).
   * Standardize response parsing around CTFd's native JSON envelope (`"success": boolean`).
 
 * **Phase 2: Telemetry and Event Tracking**
