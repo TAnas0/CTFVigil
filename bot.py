@@ -30,6 +30,7 @@ class CLIFlags(commands.FlagConverter, prefix="--", delimiter=":", case_insensit
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.reactions = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 ctf_client = CTFTimeClient()
@@ -74,7 +75,7 @@ async def send_ctf_feed(ctx: commands.Context, limit: int, online: bool):
 
 
 @bot.command(name="ctfs", aliases=["upcomingctfs", "ctf"])
-async def ctfs_cmd(ctx: commands.Context, *, flags: CLIFlags = CLIFlags()):
+async def ctfs_cmd(ctx: commands.Context, *, flags: CLIFlags):
     """CLI-like CTF feed. Supports: !ctfs --limit 5 --online"""
     await send_ctf_feed(ctx, limit=flags.limit, online=flags.online)
 
@@ -90,6 +91,58 @@ async def onlinectfs_cmd(ctx: commands.Context, limit: int = 5):
     """Online-only CTF feed."""
     await send_ctf_feed(ctx, limit=limit, online=True)
 
+
+## Reaction to messages
+
+async def get_bot_message(payload: discord.RawReactionActionEvent) -> discord.Message | None:
+    """Fetches a message from a raw reaction payload and ensures it was sent by the bot."""
+    if payload.user_id == bot.user.id:
+        return None
+
+    try:
+        # Resolve the channel (check cache first, then fetch via API if needed)
+        channel = bot.get_channel(payload.channel_id) or await bot.fetch_channel(payload.channel_id)
+        message = await channel.fetch_message(payload.message_id)
+    except (discord.HTTPException, discord.NotFound):
+        return None
+
+    # Ensure the message belongs to the bot
+    if message.author.id != bot.user.id:
+        return None
+
+    return message
+
+@bot.event
+async def on_raw_reaction_add(payload):
+    """Triggers when any reaction is added to any message."""
+    # Prevent the bot from responding to its own reactions
+    if payload.user_id == bot.user.id:
+        return
+
+    # Extract useful information from the payload
+    message_id = payload.message_id
+    channel_id = payload.channel_id
+    guild_id = payload.guild_id
+    emoji_name = payload.emoji.name  # Returns string like '👍' or custom emoji name
+    
+    print(f"User {payload.user_id} reacted with {emoji_name} on message {message_id}")
+
+    # 
+    # if the reaction is :dart: by a priviliged enough user
+    if True: # TODO if the message a is CTF link the bot has shared
+        if emoji_name == "🎯":
+            # Acquiring CTF as a target
+            print(payload)
+            message = await get_bot_message(payload)
+            print(message)
+            event_title = "Unknown CTF"
+            if message.embeds:
+                event_title = message.embeds[0].title or "Unknown CTF"
+            
+            print(f"Associated CTF Title: {event_title}")
+            # TODO create a discord event, make sure not duplicated
+
+# Main
 
 if __name__ == "__main__":
     token = os.getenv("DISCORD_TOKEN")
