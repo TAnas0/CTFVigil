@@ -166,4 +166,3 @@ class RedisCache:
         except redis.RedisError as exc:
             logger.error("RedisCache.ttl(%r) failed: %s", key, exc)
             return -2
-

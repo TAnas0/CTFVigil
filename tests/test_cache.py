@@ -10,17 +10,16 @@ from __future__ import annotations
 
 import json
 import os
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
-import pytest
 import redis
 
 from ctfvigil.cache import DEFAULT_TTL, RedisCache, get_client
 
-
 # ======================================================================= #
 # Helpers                                                                  #
 # ======================================================================= #
+
 
 def make_cache(mock_redis: MagicMock | None = None) -> tuple[RedisCache, MagicMock]:
     """Return a (RedisCache, mock_redis_client) pair."""
@@ -32,6 +31,7 @@ def make_cache(mock_redis: MagicMock | None = None) -> tuple[RedisCache, MagicMo
 # ======================================================================= #
 # get_client()                                                             #
 # ======================================================================= #
+
 
 class TestGetClient:
     """Tests for the get_client() factory."""
@@ -81,6 +81,7 @@ class TestGetClient:
 # RedisCache.get                                                           #
 # ======================================================================= #
 
+
 class TestRedisCacheGet:
     """Tests for RedisCache.get()."""
 
@@ -126,6 +127,7 @@ class TestRedisCacheGet:
 # ======================================================================= #
 # RedisCache.set                                                           #
 # ======================================================================= #
+
 
 class TestRedisCacheSet:
     """Tests for RedisCache.set()."""
@@ -185,6 +187,7 @@ class TestRedisCacheSet:
 # RedisCache.delete                                                        #
 # ======================================================================= #
 
+
 class TestRedisCacheDelete:
     """Tests for RedisCache.delete()."""
 
@@ -209,6 +212,7 @@ class TestRedisCacheDelete:
 # RedisCache.exists                                                        #
 # ======================================================================= #
 
+
 class TestRedisCacheExists:
     """Tests for RedisCache.exists()."""
 
@@ -231,6 +235,7 @@ class TestRedisCacheExists:
 # ======================================================================= #
 # RedisCache.ttl                                                           #
 # ======================================================================= #
+
 
 class TestRedisCacheTTL:
     """Tests for RedisCache.ttl()."""
@@ -260,6 +265,7 @@ class TestRedisCacheTTL:
 # Key naming conventions (documentation via test)                          #
 # ======================================================================= #
 
+
 class TestCacheKeyConventions:
     """Smoke tests that document the agreed key namespaces used by CTFVigil.
 
@@ -268,8 +274,8 @@ class TestCacheKeyConventions:
     """
 
     KNOWN_KEY_PREFIXES = [
-        "ctfvigil:events:upcoming",   # Periodic CTFtime feed cache
-        "ctfvigil:ctfd:",             # Per-CTFd instance probe results (suffix = url hash)
+        "ctfvigil:events:upcoming",  # Periodic CTFtime feed cache
+        "ctfvigil:ctfd:",  # Per-CTFd instance probe results (suffix = url hash)
     ]
 
     def test_key_prefixes_are_documented(self):
@@ -277,4 +283,3 @@ class TestCacheKeyConventions:
         for prefix in self.KNOWN_KEY_PREFIXES:
             assert isinstance(prefix, str)
             assert prefix.startswith("ctfvigil:")
-

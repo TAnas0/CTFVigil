@@ -24,6 +24,7 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/0
       - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL:-}
     healthcheck:
       test: ["CMD", "python", "-c", "import ctfvigil; import discord"]
       interval: 30s
@@ -54,6 +55,7 @@ services:
         condition: service_healthy
     environment:
       - REDIS_URL=redis://redis:6379/0
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL:-}
     healthcheck:
       test: ["CMD", "celery", "-A", "tasks.celery_app", "inspect", "ping", "--timeout", "5"]
       interval: 30s
@@ -81,6 +83,7 @@ services:
         condition: service_healthy
     environment:
       - REDIS_URL=redis://redis:6379/0
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL:-}
     restart: unless-stopped
     develop:
       watch:

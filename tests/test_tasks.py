@@ -124,9 +124,7 @@ class TestCheckCTFdCTFTask:
 
     @patch("tasks.tasks.CTFdClient")
     @patch("tasks.tasks.RedisCache")
-    def test_check_non_ctfd_returns_early_without_caching(
-        self, mock_cache_cls, mock_ctfd_cls
-    ):
+    def test_check_non_ctfd_returns_early_without_caching(self, mock_cache_cls, mock_ctfd_cls):
         mock_client = MagicMock()
         mock_client.is_ctfd_instance.return_value = False
         mock_client.base_url = "https://not-ctfd.example.com"
@@ -143,9 +141,7 @@ class TestCheckCTFdCTFTask:
 
     @patch("tasks.tasks.CTFdClient")
     @patch("tasks.tasks.RedisCache")
-    def test_check_valid_ctfd_probes_and_caches(
-        self, mock_cache_cls, mock_ctfd_cls
-    ):
+    def test_check_valid_ctfd_probes_and_caches(self, mock_cache_cls, mock_ctfd_cls):
         mock_client = MagicMock()
         mock_client.is_ctfd_instance.return_value = True
         mock_client.base_url = "https://demo.ctfd.io"
@@ -183,4 +179,3 @@ class TestCheckCTFdCTFTask:
         with patch.object(check_ctfd_ctf, "retry", side_effect=RuntimeError("Retrying")):
             with pytest.raises(RuntimeError, match="Retrying"):
                 check_ctfd_ctf("https://error.example.com")
-

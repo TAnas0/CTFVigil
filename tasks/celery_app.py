@@ -1,4 +1,5 @@
 import os
+
 from celery import Celery
 from celery.schedules import crontab
 
@@ -18,17 +19,14 @@ celery_app.conf.update(
     task_serializer="json",
     result_serializer="json",
     accept_content=["json"],
-
     # ── Time ─────────────────────────────────────────────────────────────────
     timezone="UTC",
     enable_utc=True,
-
     # ── Result backend ───────────────────────────────────────────────────────
     # Expire stored task results after 1 hour to prevent Redis bloat.
     # Results are only kept for introspection; CTFVigil does not query them
     # in normal operation (data is written to the shared RedisCache instead).
     result_expires=3600,
-
     # ── Beat schedule ────────────────────────────────────────────────────────
     # Fires sync_ctftime_events_task at the top of every 6th hour (00:00,
     # 06:00, 12:00, 18:00 UTC), keeping the cached event feed fresh without

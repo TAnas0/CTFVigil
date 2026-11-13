@@ -3,6 +3,7 @@
 # API docs: https://docs.ctfd.io/docs/api/redoc/
 
 from urllib.parse import urlparse
+
 import requests
 
 
