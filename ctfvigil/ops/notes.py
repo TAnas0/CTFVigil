@@ -12,4 +12,3 @@ Responsibilities:
 from __future__ import annotations
 
 # Future implementation will handle note collection and markdown writeup generation
-

@@ -14,4 +14,3 @@ Responsibilities:
 from __future__ import annotations
 
 # Future implementation will handle claim assignment, release, and status aggregation
-

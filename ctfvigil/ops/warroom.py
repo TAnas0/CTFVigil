@@ -17,4 +17,3 @@ Responsibilities:
 from __future__ import annotations
 
 # Future implementation will interface with discord.Guild and ctfvigil.cache.RedisCache
-

@@ -8,4 +8,3 @@ Submodules:
     - claims: Challenge claim tracking, assignment dispatch, and solve status.
     - notes: Note collection, artifact aggregation, and writeup generation.
 """
-
