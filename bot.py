@@ -7,6 +7,7 @@ from discord.ext import commands
 from ctfvigil.client import CTFTimeClient
 from ctfvigil.clients.ctfd import CTFdClient
 from ctfvigil.utils import create_event_embed
+from ctfvigil import __version__
 
 from tasks.tasks import sync_ctftime_events_task, check_ctfd_ctf
 
@@ -47,6 +48,88 @@ async def on_ready():
 @bot.command()
 async def hello(ctx: commands.Context):
     await ctx.send(f"Hello, {ctx.author.name}!")
+
+
+@bot.command(name="vigil", aliases=["commands", "guide"])
+async def vigil_help(ctx: commands.Context):
+    """Display CTFVigil's full command reference."""
+    embed = discord.Embed(
+        title="🦉 CTFVigil Command Reference",
+        description=(
+            f"Vigilant CTF ops assistant • v{__version__}\n"
+            "All commands use the `!` prefix."
+        ),
+        color=discord.Color.dark_purple(),
+    )
+
+    # ── CTFtime Feed ──────────────────────────────────────────────
+    embed.add_field(
+        name="📡 CTF Feed",
+        value=(
+            "`!ctfs [--limit N] [--online]`\n"
+            "Fetch upcoming CTFs from CTFtime with CLI-style flags.\n"
+            "Aliases: `!upcomingctfs`, `!ctf`\n\n"
+            "`!upcoming [N]`\n"
+            "Unfiltered upcoming CTF feed (default: 5).\n\n"
+            "`!onlinectfs [N]`\n"
+            "Online-only CTF feed shortcut.\n"
+            "Alias: `!upcoming_online`"
+        ),
+        inline=False,
+    )
+
+    # ── Flag examples ─────────────────────────────────────────────
+    embed.add_field(
+        name="🚩 Feed Flag Examples",
+        value=(
+            "`!ctfs --limit 10` — show 10 events\n"
+            "`!ctfs --online` — online events only\n"
+            "`!ctfs --limit 3 --online` — 3 online events\n"
+            "`!ctfs 8` — shorthand for `--limit 8`"
+        ),
+        inline=False,
+    )
+
+    # ── CTFd Integration ──────────────────────────────────────────
+    embed.add_field(
+        name="🎯 CTFd Platform Ops",
+        value=(
+            "`!track <url>`\n"
+            "Fingerprint a CTFd instance and probe its public API endpoints\n"
+            "(`/users`, `/teams`, `/challenges`, `/scoreboard`).\n"
+            "Aliases: `!inspect`, `!probe`\n\n"
+            "`!scoreboard <url>`\n"
+            "Fetch and display the live public leaderboard standings.\n"
+            "Aliases: `!standings`, `!lb`, `!leaderboard`"
+        ),
+        inline=False,
+    )
+
+    # ── Reactions ─────────────────────────────────────────────────
+    embed.add_field(
+        name="⚡ Reaction Controls",
+        value=(
+            "React to any CTFVigil event embed with:\n"
+            "🎯 — **Acquire target** — marks the CTF as a team objective\n"
+            "*(More reaction actions coming in Phase 2)*"
+        ),
+        inline=False,
+    )
+
+    # ── Tips ──────────────────────────────────────────────────────
+    embed.add_field(
+        name="💡 Tips",
+        value=(
+            "• CTFtime feed caps at **20 events** max per command.\n"
+            "• `!track` works anonymously — no credentials needed.\n"
+            "• Protected endpoints (`401`/`403`) just mean auth is required.\n"
+            "• Self-hosting? See the [GitHub repo](https://github.com/ctfvigil/CTFVigil)."
+        ),
+        inline=False,
+    )
+
+    embed.set_footer(text="CTFVigil • github.com/ctfvigil/CTFVigil • Apache 2.0")
+    await ctx.send(embed=embed)
 
 
 async def send_ctf_feed(ctx: commands.Context, limit: int, online: bool):
