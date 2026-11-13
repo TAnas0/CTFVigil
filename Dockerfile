@@ -1,6 +1,7 @@
 # Stage 1: Build stage
-# TODO Image Tag Mutation resolution
-FROM python:3.12-slim AS builder
+# Pinned to python:3.12.6-slim for reproducible, auditable builds.
+# To update: docker buildx imagetools inspect python:3.12-slim | grep Digest
+FROM python:3.12.6-slim@sha256:ad48727987b259854d52241fac3bc633574364867b8e20aec305e6e7f4028b26 AS builder
 
 WORKDIR /build
 
@@ -21,7 +22,7 @@ RUN pip install --no-cache-dir --upgrade pip build && \
     pip wheel --no-cache-dir --wheel-dir /build/wheels /build/dist/*.whl
 
 # Stage 2: Final runtime stage
-FROM python:3.12-slim AS runner
+FROM python:3.12.6-slim@sha256:ad48727987b259854d52241fac3bc633574364867b8e20aec305e6e7f4028b26 AS runner
 
 WORKDIR /app
 
@@ -47,6 +48,8 @@ COPY --chown=appuser:appuser bot.py ./
 COPY --chown=appuser:appuser ctfvigil ./ctfvigil
 COPY --chown=appuser:appuser tasks ./tasks
 
-# TODO Lack of Container Healthchecks
+# Health: verify the Python runtime and installed packages are importable
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD python -c "import ctfvigil; import discord; import celery" || exit 1
 
 CMD ["python", "bot.py"]
