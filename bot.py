@@ -1,3 +1,4 @@
+import asyncio
 import os
 import re
 
@@ -190,7 +191,7 @@ async def track_cmd(ctx: commands.Context, url: str):
     )
 
     # Run blocking CTFd probes in executor
-    loop = bot.loop
+    loop = asyncio.get_running_loop()
     client = CTFdClient(cleaned_url)
 
     is_ctfd = await loop.run_in_executor(None, client.is_ctfd_instance)
@@ -254,7 +255,7 @@ async def scoreboard_cmd(ctx: commands.Context, url: str):
 
     status_msg = await ctx.send(f"🏆 **Fetching live scoreboard from** `<{cleaned_url}>`...")
 
-    loop = bot.loop
+    loop = asyncio.get_running_loop()
     client = CTFdClient(cleaned_url)
 
     is_ctfd = await loop.run_in_executor(None, client.is_ctfd_instance)

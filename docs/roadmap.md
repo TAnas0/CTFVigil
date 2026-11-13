@@ -17,11 +17,11 @@ This document outlines the planned feature roadmap, product vision, and architec
 - [x] **Wire up Celery tasks**: Implement real logic in `sync_ctftime_events_task` — call `CTFTimeClient`, cache results in Redis, and push a digest to a configurable Discord channel. Replace all `print()` stubs with structured output.
 - [ ] **Async-ify `CTFdClient`**: Migrate from `requests` (sync) to `aiohttp` (async) to match `CTFTimeClient` and avoid blocking the Discord event loop when bot commands invoke CTFd probes.
 - [x] **Celery Beat periodic schedule**: Configure a periodic task in `celery_app.py` (e.g. daily CTFtime digest) so the beat scheduler actually fires something meaningful.
-- [ ] **Persist Celery beat schedule**: Move the beat schedule file from `/tmp/celerybeat-schedule` (lost on restart) to a named Docker volume.
+- [x] **Persist Celery beat schedule**: Move the beat schedule file from `/tmp/celerybeat-schedule` (lost on restart) to a named Docker volume.
 - [x] **Pin Docker base image**: Replace `FROM python:3.12-slim` floating tag with a pinned digest for reproducible, auditable builds.
 - [x] **Container healthchecks**: Add `HEALTHCHECK` directives to the `bot` and `worker` Compose services (currently only `redis` has one).
 - [x] **CI/CD pipeline**: Add a GitHub Actions workflow running `pytest`, a `ruff` lint check, and a Docker build validation on every pull request.
-- [ ] **Bot command test layer**: Add `pytest` tests for the Discord command layer (`!ctfs`, `!track`, `!scoreboard`) using mocked `discord.py` contexts.
+- [x] **Bot command test layer**: Add `pytest` tests for the Discord command layer (`!ctfs`, `!track`, `!scoreboard`) using mocked `discord.py` contexts.
 - [x] **Help message**: Write a proper `!help` embed detailing commands, flags, reaction targets, and usage examples.
 
 ---
