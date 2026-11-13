@@ -1,0 +1,20 @@
+name: CTF Event
+origin: http://localhost:8080
+divisions:
+  open:
+    name: Open
+tokenKey: "VGhpczEzQTMyQnl0ZVNlY3JldEtleUZvclJDVEZUZXN0aW5nIQ=="
+startTime: 1735689600000
+endTime: 1767225600000
+database:
+  sql:
+    host: rctf_db
+    port: 5432
+    user: rctf
+    password: rctf_password
+    database: rctf
+  migrate: before
+redis:
+  host: rctf_redis
+  port: 6379
+

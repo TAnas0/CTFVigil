@@ -1,0 +1,165 @@
+services:
+  # ============================================================================
+  # Platform 1: CTFd (The Industry Standard Python/Flask CTF Platform)
+  # Accessible at: http://localhost:8000
+  # API Docs: https://docs.ctfd.io/docs/api/redoc/
+  # ============================================================================
+  ctfd:
+    image: ctfd/ctfd:3.8.9
+    container_name: test_ctfd
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=ctfvigil_testing_secret_key_change_me
+      - UPLOAD_FOLDER=/var/uploads
+      - DATABASE_URL=mysql+pymysql://ctfd:ctfd_password@ctfd_db/ctfd
+      - REDIS_URL=redis://ctfd_redis:6379
+      - WORKERS=2
+      - LOG_FOLDER=/var/log/CTFd
+      - ACCESS_LOG=/var/log/CTFd/access.log
+      - ERROR_LOG=/var/log/CTFd/error.log
+      - REVERSE_PROXY=false
+    volumes:
+      - ctfd_uploads:/var/uploads
+      - ctfd_logs:/var/log/CTFd
+    depends_on:
+      ctfd_db:
+        condition: service_healthy
+      ctfd_redis:
+        condition: service_healthy
+    networks:
+      - ctf_platforms_net
+    profiles:
+      - all
+      - ctfd
+
+  ctfd_db:
+    image: mariadb:10.11
+    container_name: test_ctfd_db
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=ctfd_root_password
+      - MYSQL_USER=ctfd
+      - MYSQL_PASSWORD=ctfd_password
+      - MYSQL_DATABASE=ctfd
+    command: [
+      "mysqld",
+      "--character-set-server=utf8mb4",
+      "--collation-server=utf8mb4_unicode_ci",
+      "--wait_timeout=3600",
+      "--max_connections=200"
+    ]
+    volumes:
+      - ctfd_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - ctf_platforms_net
+    profiles:
+      - all
+      - ctfd
+
+  ctfd_redis:
+    image: redis:7-alpine
+    container_name: test_ctfd_redis
+    restart: unless-stopped
+    command: redis-server --appendonly no
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - ctf_platforms_net
+    profiles:
+      - all
+      - ctfd
+
+  # ============================================================================
+  # Platform 2: rCTF (High-Performance Modern Node.js/PostgreSQL CTF Platform)
+  # Accessible at: http://localhost:8080
+  # API Docs: https://rctf.redpwn.net/
+  # ============================================================================
+  rctf:
+    image: ghcr.io/otter-sec/rctf:latest
+    container_name: test_rctf
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      - PORT=80
+    volumes:
+      - ./test-platforms/rctf/rctf.d:/app/rctf.d:ro
+      - rctf_uploads:/app/uploads
+    depends_on:
+      rctf_db:
+        condition: service_healthy
+      rctf_redis:
+        condition: service_healthy
+    networks:
+      - ctf_platforms_net
+    profiles:
+      - all
+      - rctf
+
+  rctf_db:
+    image: postgres:15-alpine
+    container_name: test_rctf_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rctf
+      POSTGRES_PASSWORD: rctf_password
+      POSTGRES_DB: rctf
+    volumes:
+      - rctf_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rctf -d rctf"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - ctf_platforms_net
+    profiles:
+      - all
+      - rctf
+
+  rctf_redis:
+    image: redis:7-alpine
+    container_name: test_rctf_redis
+    restart: unless-stopped
+    command: redis-server --appendonly no
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - ctf_platforms_net
+    profiles:
+      - all
+      - rctf
+
+# ==============================================================================
+# Persistent Volumes
+# ==============================================================================
+volumes:
+  ctfd_db_data:
+  ctfd_uploads:
+  ctfd_logs:
+  rctf_db_data:
+  rctf_uploads:
+
+# ==============================================================================
+# Shared Network (Connectable by CTFVigil bot for testing)
+# ==============================================================================
+networks:
+  ctf_platforms_net:
+    name: ctf_platforms_net
+    driver: bridge
+

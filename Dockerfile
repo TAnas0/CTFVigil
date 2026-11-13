@@ -36,6 +36,8 @@ RUN groupadd -g 10001 appuser && \
     mkdir -p /app/data && \
     chown -R appuser:appuser /app
 
+VOLUME ["/app/data"]
+
 # Copy pre-built wheels from builder stage with proper appuser ownership
 COPY --from=builder --chown=appuser:appuser /build/wheels /tmp/wheels
 
