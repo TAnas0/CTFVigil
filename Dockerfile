@@ -33,7 +33,8 @@ ENV PYTHONUNBUFFERED=1 \
 # Create non-root system user and group
 RUN groupadd -g 10001 appuser && \
     useradd -u 10001 -g appuser -m -s /bin/bash appuser && \
-    chown appuser:appuser /app
+    mkdir -p /app/data && \
+    chown -R appuser:appuser /app
 
 # Copy pre-built wheels from builder stage with proper appuser ownership
 COPY --from=builder --chown=appuser:appuser /build/wheels /tmp/wheels
