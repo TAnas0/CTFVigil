@@ -12,7 +12,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 import requests
 
-from tasks.tasks import UPCOMING_EVENTS_CACHE_KEY, UPCOMING_EVENTS_TTL, sync_ctftime_events_task
+from tasks.tasks import (
+    CTFD_PROBE_TTL,
+    UPCOMING_EVENTS_CACHE_KEY,
+    UPCOMING_EVENTS_TTL,
+    check_ctfd_ctf,
+    sync_ctftime_events_task,
+)
 
 
 @pytest.fixture
@@ -111,4 +117,70 @@ class TestSyncCTFTimeEventsTask:
         with patch.object(sync_ctftime_events_task, "retry", side_effect=RuntimeError("Retrying")):
             with pytest.raises(RuntimeError, match="Retrying"):
                 sync_ctftime_events_task()
+
+
+class TestCheckCTFdCTFTask:
+    """Tests for check_ctfd_ctf."""
+
+    @patch("tasks.tasks.CTFdClient")
+    @patch("tasks.tasks.RedisCache")
+    def test_check_non_ctfd_returns_early_without_caching(
+        self, mock_cache_cls, mock_ctfd_cls
+    ):
+        mock_client = MagicMock()
+        mock_client.is_ctfd_instance.return_value = False
+        mock_client.base_url = "https://not-ctfd.example.com"
+        mock_ctfd_cls.return_value = mock_client
+
+        mock_cache = MagicMock()
+        mock_cache_cls.return_value = mock_cache
+
+        result = check_ctfd_ctf("https://not-ctfd.example.com")
+
+        assert result == {"is_ctfd": False, "url": "https://not-ctfd.example.com"}
+        mock_client.probe_all_endpoints.assert_not_called()
+        mock_cache.set.assert_not_called()
+
+    @patch("tasks.tasks.CTFdClient")
+    @patch("tasks.tasks.RedisCache")
+    def test_check_valid_ctfd_probes_and_caches(
+        self, mock_cache_cls, mock_ctfd_cls
+    ):
+        mock_client = MagicMock()
+        mock_client.is_ctfd_instance.return_value = True
+        mock_client.base_url = "https://demo.ctfd.io"
+        mock_client.get_ctf_title.return_value = "Demo CTF"
+        mock_client.probe_all_endpoints.return_value = {
+            "challenges": {"accessible": True, "count": 10},
+            "scoreboard": {"accessible": True, "count": 50},
+        }
+        mock_ctfd_cls.return_value = mock_client
+
+        mock_cache = MagicMock()
+        mock_cache_cls.return_value = mock_cache
+
+        result = check_ctfd_ctf("https://demo.ctfd.io")
+
+        assert result["is_ctfd"] is True
+        assert result["url"] == "https://demo.ctfd.io"
+        assert result["title"] == "Demo CTF"
+        assert "challenges" in result["endpoints"]
+        assert "checked_at" in result
+
+        mock_cache.set.assert_called_once()
+        call_key, call_val = mock_cache.set.call_args[0][:2]
+        call_ttl = mock_cache.set.call_args[1].get("ttl")
+        assert call_key.startswith("ctfvigil:ctfd:")
+        assert call_val == result
+        assert call_ttl == CTFD_PROBE_TTL
+
+    @patch("tasks.tasks.CTFdClient")
+    def test_check_triggers_retry_on_exception(self, mock_ctfd_cls):
+        mock_client = MagicMock()
+        mock_client.is_ctfd_instance.side_effect = requests.RequestException("Connection error")
+        mock_ctfd_cls.return_value = mock_client
+
+        with patch.object(check_ctfd_ctf, "retry", side_effect=RuntimeError("Retrying")):
+            with pytest.raises(RuntimeError, match="Retrying"):
+                check_ctfd_ctf("https://error.example.com")
 

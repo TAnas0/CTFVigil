@@ -1,15 +1,15 @@
 import os
 import re
-from dotenv import load_dotenv
+
 import discord
 from discord.ext import commands
+from dotenv import load_dotenv
 
+from ctfvigil import __version__
 from ctfvigil.client import CTFTimeClient
 from ctfvigil.clients.ctfd import CTFdClient
 from ctfvigil.utils import create_event_embed
-from ctfvigil import __version__
-
-from tasks.tasks import sync_ctftime_events_task, check_ctfd_ctf
+from tasks.tasks import check_ctfd_ctf
 
 load_dotenv()
 
@@ -234,7 +234,7 @@ async def track_cmd(ctx: commands.Context, url: str):
         elif status_code in (401, 403):
             val_text = f"⚠️ `HTTP {status_code}` (Protected by admins)"
         elif status_code == 404:
-            val_text = f"❌ `404 Not Found` (Disabled)"
+            val_text = "❌ `404 Not Found` (Disabled)"
         else:
             reason = res.get("reason", "Unavailable")
             val_text = f"❌ `{reason}`"
@@ -337,36 +337,41 @@ async def get_bot_message(payload: discord.RawReactionActionEvent) -> discord.Me
 
 
 @bot.event
-async def on_raw_reaction_add(payload):
+async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     """Triggers when any reaction is added to any message."""
     # Prevent the bot from responding to its own reactions
     if payload.user_id == bot.user.id:
         return
 
-    # Extract useful information from the payload
-    message_id = payload.message_id
-    channel_id = payload.channel_id
-    guild_id = payload.guild_id
     emoji_name = payload.emoji.name  # Returns string like '👍' or custom emoji name
+    print(f"User {payload.user_id} reacted with {emoji_name} on message {payload.message_id}")
 
-    print(f"User {payload.user_id} reacted with {emoji_name} on message {message_id}")
-
-    #
-    # if the reaction is :dart: by a priviliged enough user
-    if True:  # TODO if the message a is CTF link the bot has shared
-        if emoji_name == "🎯":
-            # Acquiring CTF as a target
-            print(payload)
-            message = await get_bot_message(payload)
-            print(message)
+    if emoji_name == "🎯":
+        message = await get_bot_message(payload)
+        if message is not None:
             event_title = "Unknown CTF"
+            target_url = None
+
             if message.embeds:
-                event_title = message.embeds[0].title or "Unknown CTF"
+                embed = message.embeds[0]
+                event_title = embed.title or "Unknown CTF"
+                target_url = embed.url
+
+                # Fall back to CTFtime URL if no direct URL is present on the embed
+                if not target_url:
+                    for field in embed.fields:
+                        if field.name and "CTFtime" in field.name and field.value:
+                            match = re.search(r"\((https?://[^\s)]+)\)", field.value)
+                            if match:
+                                target_url = match.group(1)
+                                break
 
             print(f"Associated CTF Title: {event_title}")
-            # TODO create a discord event, make sure not duplicated
-            check_ctfd_ctf.delay("https://demo.ctfd.io/")
-            print("🔄 Background sync task dispatched to Celery worker!")
+            if target_url:
+                check_ctfd_ctf.delay(target_url)
+                print(f"🔄 Background CTFd check dispatched to Celery worker for: {target_url}")
+            else:
+                print(f"⚠️ No target URL found in message embed for: {event_title}")
 
 
 # Main
