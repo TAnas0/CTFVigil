@@ -8,8 +8,10 @@ from ctfvigil.client import CTFTimeClient
 
 def async_test(coro):
     """Helper runner to avoid needing pytest-asyncio plugin dependency."""
+
     def wrapper(*args, **kwargs):
         return asyncio.run(coro(*args, **kwargs))
+
     return wrapper
 
 
@@ -79,5 +81,7 @@ class TestCTFTimeClient:
         mock_session.get.side_effect = aiohttp.ClientError("Connection reset")
 
         client = CTFTimeClient(session=mock_session)
-        with pytest.raises(RuntimeError, match="Network error communicating with CTFtime API: Connection reset"):
+        with pytest.raises(
+            RuntimeError, match="Network error communicating with CTFtime API: Connection reset"
+        ):
             await client.fetch_upcoming_events()

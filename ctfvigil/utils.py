@@ -47,9 +47,13 @@ def create_event_embed(event: dict) -> discord.Embed:
     )
 
     if start_ts:
-        embed.add_field(name="⏰ Starts", value=f"<t:{start_ts}:F>\n(<t:{start_ts}:R>)", inline=True)
+        embed.add_field(
+            name="⏰ Starts", value=f"<t:{start_ts}:F>\n(<t:{start_ts}:R>)", inline=True
+        )
     if finish_ts:
-        embed.add_field(name="⏳ Ends", value=f"<t:{finish_ts}:F>\n(<t:{finish_ts}:R>)", inline=True)
+        embed.add_field(
+            name="⏳ Ends", value=f"<t:{finish_ts}:F>\n(<t:{finish_ts}:R>)", inline=True
+        )
 
     embed.add_field(name="🏛️ Organizer", value=org_name, inline=True)
     embed.add_field(name="🏆 Format", value=f"{format_type} ({location_str})", inline=True)

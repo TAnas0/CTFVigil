@@ -74,7 +74,9 @@ class TestFormatDescription:
 
     def test_paragraph_with_internal_newlines(self):
         desc = "First line of paragraph 1.\nSecond line of paragraph 1.\n\nParagraph 2."
-        assert format_description(desc) == "First line of paragraph 1.\nSecond line of paragraph 1..."
+        assert (
+            format_description(desc) == "First line of paragraph 1.\nSecond line of paragraph 1..."
+        )
 
     def test_leading_and_trailing_whitespace(self):
         desc = "\n\n  This is a padded description.  \n\n  Other text.  "

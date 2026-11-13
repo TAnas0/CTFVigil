@@ -56,8 +56,7 @@ async def vigil_help(ctx: commands.Context):
     embed = discord.Embed(
         title="🦉 CTFVigil Command Reference",
         description=(
-            f"Vigilant CTF ops assistant • v{__version__}\n"
-            "All commands use the `!` prefix."
+            f"Vigilant CTF ops assistant • v{__version__}\nAll commands use the `!` prefix."
         ),
         color=discord.Color.dark_purple(),
     )
@@ -186,7 +185,9 @@ async def track_cmd(ctx: commands.Context, url: str):
         cleaned_url = f"https://{cleaned_url}"
 
     # Initial outspoken status message
-    status_msg = await ctx.send(f"🔍 **Fingerprinting target CTFd platform at** `<{cleaned_url}>`...")
+    status_msg = await ctx.send(
+        f"🔍 **Fingerprinting target CTFd platform at** `<{cleaned_url}>`..."
+    )
 
     # Run blocking CTFd probes in executor
     loop = bot.loop
@@ -197,7 +198,7 @@ async def track_cmd(ctx: commands.Context, url: str):
         embed = discord.Embed(
             title="❌ Target Probing Failed",
             description=f"Could not verify a valid CTFd API structure at `<{cleaned_url}>`.\n"
-                        "Make sure the URL points to a live CTFd instance.",
+            "Make sure the URL points to a live CTFd instance.",
             color=discord.Color.red(),
         )
         await status_msg.edit(content=None, embed=embed)
@@ -267,7 +268,9 @@ async def scoreboard_cmd(ctx: commands.Context, url: str):
         return
 
     ctf_title = await loop.run_in_executor(None, client.get_ctf_title)
-    scoreboard_data = await loop.run_in_executor(None, lambda: client.get_ctfd_scoreboard_details(limit=10))
+    scoreboard_data = await loop.run_in_executor(
+        None, lambda: client.get_ctfd_scoreboard_details(limit=10)
+    )
 
     if not scoreboard_data.get("accessible"):
         status_code = scoreboard_data.get("status_code", 0)
@@ -275,7 +278,7 @@ async def scoreboard_cmd(ctx: commands.Context, url: str):
         embed = discord.Embed(
             title=f"⚠️ Scoreboard Protected: {ctf_title}",
             description=f"The scoreboard endpoint is locked or hidden by administrators.\n"
-                        f"**Status:** `HTTP {status_code}` ({reason})",
+            f"**Status:** `HTTP {status_code}` ({reason})",
             color=discord.Color.gold(),
         )
         await status_msg.edit(content=None, embed=embed)
@@ -313,6 +316,7 @@ async def scoreboard_cmd(ctx: commands.Context, url: str):
 
 ## Reaction to messages
 
+
 async def get_bot_message(payload: discord.RawReactionActionEvent) -> discord.Message | None:
     """Fetches a message from a raw reaction payload and ensures it was sent by the bot."""
     if payload.user_id == bot.user.id:
@@ -331,6 +335,7 @@ async def get_bot_message(payload: discord.RawReactionActionEvent) -> discord.Me
 
     return message
 
+
 @bot.event
 async def on_raw_reaction_add(payload):
     """Triggers when any reaction is added to any message."""
@@ -343,12 +348,12 @@ async def on_raw_reaction_add(payload):
     channel_id = payload.channel_id
     guild_id = payload.guild_id
     emoji_name = payload.emoji.name  # Returns string like '👍' or custom emoji name
-    
+
     print(f"User {payload.user_id} reacted with {emoji_name} on message {message_id}")
 
-    # 
+    #
     # if the reaction is :dart: by a priviliged enough user
-    if True: # TODO if the message a is CTF link the bot has shared
+    if True:  # TODO if the message a is CTF link the bot has shared
         if emoji_name == "🎯":
             # Acquiring CTF as a target
             print(payload)
@@ -357,11 +362,12 @@ async def on_raw_reaction_add(payload):
             event_title = "Unknown CTF"
             if message.embeds:
                 event_title = message.embeds[0].title or "Unknown CTF"
-            
+
             print(f"Associated CTF Title: {event_title}")
             # TODO create a discord event, make sure not duplicated
             check_ctfd_ctf.delay("https://demo.ctfd.io/")
             print("🔄 Background sync task dispatched to Celery worker!")
+
 
 # Main
 

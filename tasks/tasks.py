@@ -1,5 +1,6 @@
 from tasks.celery_app import celery_app
 
+
 @celery_app.task(bind=True, max_retries=3)
 def sync_ctftime_events_task(self):
     """Heavy operation running entirely outside the Discord bot loop."""
@@ -9,6 +10,7 @@ def sync_ctftime_events_task(self):
     except Exception as exc:
         # Automatic exponential backoff retry on failure
         raise self.retry(exc=exc, countdown=60)
+
 
 @celery_app.task(bind=True, max_retries=3)
 def check_ctfd_ctf(self, ctf_url: str):

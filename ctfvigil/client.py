@@ -12,7 +12,9 @@ class CTFTimeClient:
         self._session = session
         self.user_agent = user_agent or self.DEFAULT_USER_AGENT
 
-    async def fetch_upcoming_events(self, limit: int = 10, start_timestamp: int | None = None) -> list[dict]:
+    async def fetch_upcoming_events(
+        self, limit: int = 10, start_timestamp: int | None = None
+    ) -> list[dict]:
         """Fetch upcoming events from CTFtime API with robust error handling."""
         if start_timestamp is None:
             start_timestamp = int(time.time())
@@ -27,7 +29,9 @@ class CTFTimeClient:
             session_created = True
 
         try:
-            async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as response:
+            async with session.get(
+                url, headers=headers, timeout=aiohttp.ClientTimeout(total=10)
+            ) as response:
                 if response.status != 200:
                     raise RuntimeError(f"CTFtime API error: HTTP {response.status}")
                 return await response.json()

@@ -9,7 +9,9 @@ import requests
 class CTFdClient:
     """HTTP client to manage and communicate with a CTFd instance."""
 
-    def __init__(self, base_url: str, token: str = None, session_cookie: str = None, csrf_token: str = None):
+    def __init__(
+        self, base_url: str, token: str = None, session_cookie: str = None, csrf_token: str = None
+    ):
         cleaned_url = base_url.strip()
         if not cleaned_url.startswith(("http://", "https://")):
             cleaned_url = f"https://{cleaned_url}"
@@ -27,11 +29,13 @@ class CTFdClient:
         if self.csrf_token:
             self.session.headers.update({"CSRF-Token": self.csrf_token})
 
-        self.session.headers.update({
-            "User-Agent": "CTFVigil/1.0 (Discord Bot; +https://github.com/ctfvigil)",
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        })
+        self.session.headers.update(
+            {
+                "User-Agent": "CTFVigil/1.0 (Discord Bot; +https://github.com/ctfvigil)",
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            }
+        )
 
     def is_ctfd_instance(self) -> bool:
         """Fingerprints a target URL to verify if it's running CTFd by checking API structure."""
@@ -58,13 +62,30 @@ class CTFdClient:
             if status_code == 200 and isinstance(data, dict) and data.get("success"):
                 items = data.get("data", [])
                 count = len(items) if isinstance(items, list) else None
-                return {"status_code": status_code, "accessible": True, "count": count, "data": items}
+                return {
+                    "status_code": status_code,
+                    "accessible": True,
+                    "count": count,
+                    "data": items,
+                }
             elif status_code in (401, 403):
-                return {"status_code": status_code, "accessible": False, "reason": "Protected / Authentication Required"}
+                return {
+                    "status_code": status_code,
+                    "accessible": False,
+                    "reason": "Protected / Authentication Required",
+                }
             elif status_code == 404:
-                return {"status_code": status_code, "accessible": False, "reason": "Endpoint Not Found / Disabled"}
+                return {
+                    "status_code": status_code,
+                    "accessible": False,
+                    "reason": "Endpoint Not Found / Disabled",
+                }
             else:
-                return {"status_code": status_code, "accessible": False, "reason": f"HTTP {status_code}"}
+                return {
+                    "status_code": status_code,
+                    "accessible": False,
+                    "reason": f"HTTP {status_code}",
+                }
         except requests.RequestException as exc:
             return {"status_code": 0, "accessible": False, "reason": f"Connection Error ({exc})"}
 
@@ -104,7 +125,7 @@ class CTFdClient:
             "verified": True,
             "hidden": False,
             "banned": False,
-            "fields": []
+            "fields": [],
         }
 
         response = self.session.post(url, json=payload)
@@ -113,10 +134,7 @@ class CTFdClient:
         except ValueError:
             data = {"message": response.text}
 
-        return {
-            "status_code": response.status_code,
-            "data": data
-        }
+        return {"status_code": response.status_code, "data": data}
 
     def get_ctfd_users(self) -> list:
         return self.probe_endpoint("users").get("data", [])
@@ -138,7 +156,7 @@ class CTFdClient:
                 "accessible": False,
                 "status_code": probe.get("status_code", 0),
                 "reason": probe.get("reason", "Forbidden or Unavailable"),
-                "standings": []
+                "standings": [],
             }
 
         raw_data = probe.get("data", [])
@@ -148,15 +166,6 @@ class CTFdClient:
                 name = entry.get("name") or entry.get("account_name") or f"Entry #{idx}"
                 score = entry.get("score", 0)
                 pos = entry.get("pos") or idx
-                standings.append({
-                    "pos": pos,
-                    "name": name,
-                    "score": score
-                })
+                standings.append({"pos": pos, "name": name, "score": score})
 
-        return {
-            "accessible": True,
-            "status_code": 200,
-            "reason": "OK",
-            "standings": standings
-        }
+        return {"accessible": True, "status_code": 200, "reason": "OK", "standings": standings}
