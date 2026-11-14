@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 import discord
 import pytest
@@ -11,17 +11,17 @@ class TestIsoToTimestamp:
 
     def test_valid_iso_utc_with_z(self):
         iso_str = "2026-08-30T12:00:00Z"
-        expected = int(datetime(2026, 8, 30, 12, 0, 0, tzinfo=UTC).timestamp())
+        expected = int(datetime(2026, 8, 30, 12, 0, 0, tzinfo=timezone.utc).timestamp())
         assert iso_to_timestamp(iso_str) == expected
 
     def test_valid_iso_with_explicit_offset(self):
         iso_str = "2026-08-30T14:00:00+02:00"
-        expected = int(datetime(2026, 8, 30, 12, 0, 0, tzinfo=UTC).timestamp())
+        expected = int(datetime(2026, 8, 30, 12, 0, 0, tzinfo=timezone.utc).timestamp())
         assert iso_to_timestamp(iso_str) == expected
 
     def test_valid_iso_negative_offset(self):
         iso_str = "2026-08-30T07:00:00-05:00"
-        expected = int(datetime(2026, 8, 30, 12, 0, 0, tzinfo=UTC).timestamp())
+        expected = int(datetime(2026, 8, 30, 12, 0, 0, tzinfo=timezone.utc).timestamp())
         assert iso_to_timestamp(iso_str) == expected
 
     def test_valid_iso_without_timezone_naive(self):

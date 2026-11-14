@@ -4,7 +4,7 @@ import asyncio
 import hashlib
 import logging
 import os
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 import requests
@@ -80,7 +80,7 @@ def sync_ctftime_events_task(self) -> dict[str, Any]:
             except Exception as hook_exc:
                 logger.warning("Failed to dispatch CTF digest to Discord webhook: %s", hook_exc)
 
-        cached_at = datetime.now(UTC).isoformat()
+        cached_at = datetime.now(timezone.utc).isoformat()
         return {
             "fetched": len(events),
             "cached_at": cached_at,
@@ -114,7 +114,7 @@ def check_ctfd_ctf(self, ctf_url: str) -> dict[str, Any]:
             "url": client.base_url,
             "title": ctf_title,
             "endpoints": probe_results,
-            "checked_at": datetime.now(UTC).isoformat(),
+            "checked_at": datetime.now(timezone.utc).isoformat(),
         }
 
         cache = RedisCache(get_client())
